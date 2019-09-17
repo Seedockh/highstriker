@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Animated, Easing } from 'react-native';
-import { Audio, Asset } from 'expo';
+import { Audio } from 'expo-av';
 import Dimensions from 'Dimensions';
 import { IconButton, Button } from 'react-native-paper';
 
@@ -49,10 +49,27 @@ export default function App() {
   }, [currentPosition])
 
   useEffect(() => {
-    if (lastPosition===100) {
-      setScore(score+1);
+    if (maxPosition===0) {
+      switch (true) {
+        case (lastPosition > 12 && lastPosition < 25):
+          setScore(score+1);
+          break;
+        case (lastPosition >= 25 && lastPosition < 50):
+          setScore(score+2);
+          break;
+        case (lastPosition >= 50 && lastPosition < 75):
+          setScore(score+3);
+          break;
+        case (lastPosition >= 75 && lastPosition < 100):
+          setScore(score+4);
+          break;
+        case lastPosition === 100 :
+          setScore(score+5);
+          break;
+        default: break;
+      }
     }
-  }, [lastPosition])
+  }, [maxPosition])
 
   useEffect(()=>{
     if (isStriked) {
@@ -120,16 +137,6 @@ export default function App() {
     });
   }
 
-
-     async function _cacheResourcesAsync() {
-       const samples = [require('./sounds/bell2.wav'), require('./sounds/strike.wav'), require('./sounds/rails.mp3')];
-       const cacheSamples = samples.map((samples) => {
-         return Asset.fromModule(samples).downloadAsync();
-       });
-       return Promise.all(cacheSamples)
-     }
-
-
   return (
     <View style={styles.container}>
       <View style={[styles.header, {height: headerHeight}]}>
@@ -145,11 +152,46 @@ export default function App() {
         </View>
         <View style={styles.headerRight}>
           <Text style={styles.headerValueTitle}>Last</Text>
-          <Text style={styles.textLastScore}>{lastPosition}</Text>
+          <Text style={styles.textLastScore}>{lastPosition}%</Text>
         </View>
       </View>
     </View>
-      <Button style={[styles.clearButton, {top: headerHeight}]} mode="contained" onPress={clear}>Clear</Button>
+      <Button style={[styles.clearButton, {top: headerHeight}]} mode="outlines" color="white" onPress={clear}>Clear</Button>
+      {lastPosition>12 &&
+        <>
+        {lastPosition<25 &&
+          <View style={[styles.congrats, {top: headerHeight+50}]}>
+            <Text style={styles.increaseText}>+1</Text>
+          </View>
+        }
+        {lastPosition>=25 && lastPosition<50 &&
+          <View style={[styles.congrats, {top: headerHeight+50}]}>
+            <Text style={styles.increaseText}>+2</Text>
+          </View>
+        }
+        {lastPosition>=50 && lastPosition<75 &&
+          <View style={[styles.congrats, {top: headerHeight+50}]}>
+            <Text style={styles.increaseText}>+3</Text>
+          </View>
+        }
+        {lastPosition>=75 && lastPosition<100 &&
+          <View style={[styles.congrats, {top: headerHeight+50}]}>
+            <Text style={styles.increaseText}>+4</Text>
+          </View>
+        }
+        {lastPosition===100 &&
+          <View style={[styles.congrats, {top: headerHeight+50}]}>
+            <Text style={styles.increaseText}>+5</Text>
+          </View>
+        }
+        </>
+      }
+      {score>0 && score%10===0 &&
+        <View style={[styles.congrats, {top: headerHeight+50}]}>
+          <Text style={styles.congratsText}></Text>
+          <Text style={styles.congratsText}>Patience is strength !</Text>
+        </View>
+      }
       <View style={[styles.tower, {height: towerHeight, bottom: puckBase}]}></View>
       <Animated.View style={[{bottom: puckPosition}, styles.puck]}></Animated.View>
       <View style={[styles.bell, {bottom: towerHeight+puckBase-100}]}></View>
@@ -219,6 +261,22 @@ const styles = StyleSheet.create({
   textLastScore: {
     color: '#ffe07c',
     fontSize: 18,
+    fontWeight: 'bold',
+  },
+  congrats: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  congratsText: {
+    color: "white",
+    marginTop: 10,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  increaseText: {
+    color: "green",
+    fontSize: 20,
     fontWeight: 'bold',
   },
   tower: {
