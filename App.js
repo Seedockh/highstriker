@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Animated, Easing } from 'react-native';
-import { Audio } from 'expo-av';
+import { Audio, Asset } from 'expo';
 import Dimensions from 'Dimensions';
 import { IconButton, Button } from 'react-native-paper';
 
@@ -119,6 +119,16 @@ export default function App() {
       setIsStriked(false);
     });
   }
+
+
+     async function _cacheResourcesAsync() {
+       const samples = [require('./sounds/bell2.wav'), require('./sounds/strike.wav'), require('./sounds/rails.mp3')];
+       const cacheSamples = samples.map((samples) => {
+         return Asset.fromModule(samples).downloadAsync();
+       });
+       return Promise.all(cacheSamples)
+     }
+
 
   return (
     <View style={styles.container}>
