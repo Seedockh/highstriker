@@ -17,6 +17,7 @@ export default function App() {
   const strikeHeight = 75;
   const puckBase = strikeHeight+20;
   const [puckPosition, setPuckPosition] = useState(new Animated.Value(puckBase));
+  const [bellLeft, setBellLeft] = useState(new Animated.Value(0));
   const [currentPosition, setCurrentPosition] = useState(0);
   const [maxPosition, setMaxPosition] = useState(0);
   const [lastPosition, setLastPosition] = useState(0);
@@ -27,6 +28,7 @@ export default function App() {
   const bell = new Audio.Sound();
   const rail = new Audio.Sound();
   const strike = new Audio.Sound();
+  const notification = new Audio.Sound();
 
 
   /* Listens to the puck's position and convert it in percents */
@@ -35,13 +37,30 @@ export default function App() {
         setCurrentPosition(Math.round((height.value-puckBase)/(towerHeight-140)*100));
       }
     );
+    bellLeft.addListener( left => {
+        //setBellLeft(left.value);
+      }
+    );
   }, []);
 
   useEffect(() => {
     if (currentPosition > maxPosition)
       setMaxPosition(currentPosition);
-    if (currentPosition === 100)
-      soundBell();
+    if (currentPosition === 100) {
+      Animated.sequence([
+        Animated.timing(
+          bellLeft,
+          {
+            toValue: 50,
+            easing: Easing.ease,
+            duration: 100,
+            delay: 0,
+          },
+        ),
+      ]).start(() => {
+        soundBell();
+      });
+    }
     if (currentPosition > 1)
       setLastPosition(maxPosition);
     if (currentPosition === 0)
@@ -53,18 +72,23 @@ export default function App() {
       switch (true) {
         case (lastPosition > 12 && lastPosition < 25):
           setScore(score+1);
+          soundNotification(13);
           break;
         case (lastPosition >= 25 && lastPosition < 50):
           setScore(score+2);
+          soundNotification(25);
           break;
         case (lastPosition >= 50 && lastPosition < 75):
           setScore(score+3);
+          soundNotification(50);
           break;
         case (lastPosition >= 75 && lastPosition < 100):
           setScore(score+4);
+          soundNotification(75);
           break;
         case lastPosition === 100 :
           setScore(score+5);
+          soundNotification(100);
           break;
         default: break;
       }
@@ -100,6 +124,30 @@ export default function App() {
     try {
       await strike.loadAsync(require('./assets/sounds/strike.wav'));
       await strike.playAsync();
+    } catch (err) { console.log(err) }
+  }
+
+  soundNotification = async (level) => {
+    try {
+      switch (level) {
+          case 13:
+            await notification.loadAsync(require('./assets/sounds/notif-13.mp3'));
+            break;
+          case 25:
+            await notification.loadAsync(require('./assets/sounds/notif-25.wav'));
+            break;
+          case 50:
+            await notification.loadAsync(require('./assets/sounds/notif-50.wav'));
+            break;
+          case 75:
+            await notification.loadAsync(require('./assets/sounds/notif-75.mp3'));
+            break;
+          case 100:
+            await notification.loadAsync(require('./assets/sounds/notif-100.wav'));
+            break;
+          default: break;
+      }
+      await notification.playAsync();
     } catch (err) { console.log(err) }
   }
 
@@ -151,40 +199,30 @@ export default function App() {
           <Text style={styles.textScore}>{score}</Text>
         </View>
         <View style={styles.headerRight}>
-          <Text style={styles.headerValueTitle}>Last</Text>
+          <Text style={styles.headerValueTitle}>Hit</Text>
           <Text style={styles.textLastScore}>{lastPosition}%</Text>
         </View>
       </View>
     </View>
       <Button style={[styles.clearButton, {top: headerHeight}]} mode="outlines" color="white" onPress={clear}>Clear</Button>
       {lastPosition>12 &&
-        <>
+        <View style={[styles.congrats, {top: headerHeight+50}]}>
         {lastPosition<25 &&
-          <View style={[styles.congrats, {top: headerHeight+50}]}>
             <Text style={styles.increaseText}>+1</Text>
-          </View>
         }
         {lastPosition>=25 && lastPosition<50 &&
-          <View style={[styles.congrats, {top: headerHeight+50}]}>
             <Text style={styles.increaseText}>+2</Text>
-          </View>
         }
         {lastPosition>=50 && lastPosition<75 &&
-          <View style={[styles.congrats, {top: headerHeight+50}]}>
             <Text style={styles.increaseText}>+3</Text>
-          </View>
         }
         {lastPosition>=75 && lastPosition<100 &&
-          <View style={[styles.congrats, {top: headerHeight+50}]}>
             <Text style={styles.increaseText}>+4</Text>
-          </View>
         }
         {lastPosition===100 &&
-          <View style={[styles.congrats, {top: headerHeight+50}]}>
             <Text style={styles.increaseText}>+5</Text>
-          </View>
         }
-        </>
+        </View>
       }
       {score>0 && score%10===0 &&
         <View style={[styles.congrats, {top: headerHeight+50}]}>
@@ -291,8 +329,8 @@ const styles = StyleSheet.create({
     borderRightWidth: 3,
     borderBottomWidth: 3,
     borderColor: '#67717e',
-    position: 'absolute',
     borderRadius: 50,
+    position: 'absolute',
   },
   puck: {
     width: 50,
